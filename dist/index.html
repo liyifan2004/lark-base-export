@@ -4,12 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>多维表格 CSV 导出</title>
-    <script type="module" crossorigin src="./assets/index-BJ7MGEpx.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CWu-W6cS.css">
+    <script type="module" crossorigin src="./assets/index-DYe228Ed.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-L_gBTQL5.css">
   </head>
   <body>
-    <div id="container"></div>
-    <div id="download-fallback" class="download-fallback"></div>
+    <header id="app-header" class="app-header">
+      <span class="app-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M13 3v5h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M12 11v6m0 0-2.2-2.2M12 17l2.2-2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <h1 id="app-title" class="app-title">CSV 导出</h1>
+      <span class="app-version">v1.0.0</span>
+      <details class="app-help">
+        <summary id="app-help-summary">使用说明</summary>
+        <pre id="app-help-body" class="app-help-body"></pre>
+      </details>
+    </header>
+    <main id="container"></main>
+    <section id="result-panel" class="result-panel"></section>
     <footer id="sync-status" class="sync-status">就绪</footer>
   </body>
 </html>
