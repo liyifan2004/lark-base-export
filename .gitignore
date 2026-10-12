@@ -1,0 +1,14 @@
+# 注意：dist 是插件上架所需的静态产物，故意不忽略（官方要求随仓库提交）
+node_modules/
+*.local
+*.log
+.vite/
+.tmp/
+
+# AI 助手工作文件夹 —— 绝不入库
+.workbuddy/
+.claude/
+.agents/
+
+# 第三方参考代码（SDK 解包 / 开源插件源码），不入库
+_ref/
