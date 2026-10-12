@@ -1,0 +1,24 @@
+{
+  "name": "lark-base-export",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "多维表格边栏插件：将当前表导出为 CSV，超链接字段输出「显示文字 空格 原始链接」",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "node scripts/test.mjs"
+  },
+  "output": "dist",
+  "license": "MIT",
+  "dependencies": {
+    "@lark-base-open/js-sdk": "^1.0.2"
+  },
+  "devDependencies": {
+    "@esbuild/win32-x64": "^0.21.5",
+    "@rollup/rollup-win32-x64-msvc": "^4.64.5",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}
