@@ -1,5 +1,5 @@
 /**
- * 入口：主题适配 + UIBuilder 挂载 + 数据变化事件监听（无需手动刷新）。
+ * 入口：i18n + 主题适配 + UIBuilder 挂载 + 数据变化事件监听（无需手动刷新）。
  *
  * 事件策略：
  * - 表/字段结构变化（TableAdd/Delete、FieldAdd/Delete/Modify、切换数据表）：
@@ -9,6 +9,7 @@
  */
 import './style.css';
 import { UIBuilder, bitable, type IEventCbCtx, type Selection } from '@lark-base-open/js-sdk';
+import { getLang, setLang, t, type MessageKey } from './i18n';
 import runUIBuilder from './runUIBuilder';
 import { initTheme } from './theme';
 
@@ -19,6 +20,10 @@ function updateSyncStatus(note: string): void {
   }
 }
 
+function syncStatus(key: MessageKey): void {
+  updateSyncStatus(t(key));
+}
+
 function debounce<T extends (...args: never[]) => void>(fn: T, ms: number): T {
   let timer: ReturnType<typeof setTimeout> | undefined;
   return ((...args: never[]) => {
@@ -27,12 +32,26 @@ function debounce<T extends (...args: never[]) => void>(fn: T, ms: number): T {
   }) as T;
 }
 
+function renderHeader(): void {
+  document.documentElement.lang = getLang() === 'zh' ? 'zh-CN' : 'en';
+  const title = document.getElementById('app-title');
+  if (title) title.textContent = t('app.title');
+  const summary = document.getElementById('app-help-summary');
+  if (summary) summary.textContent = t('help.summary');
+  const body = document.getElementById('app-help-body');
+  if (body) body.textContent = t('help.body');
+  const sync = document.getElementById('sync-status');
+  if (sync) sync.textContent = t('sync.ready');
+}
+
 async function bootstrap(): Promise<void> {
+  setLang(await bitable.bridge.getLanguage().catch(() => 'zh'));
+  renderHeader();
   await initTheme();
 
   const container = document.querySelector('#container') as HTMLElement;
-  // MVP 仅中文；i18n 属于可选扩展。这里提供最小 stub 供 SDK 内部文案使用
-  const translation = { t: (key: string) => key, i18n: { language: 'zh' } };
+  // SDK 内部文案跟随当前语言（我方文案走 i18n.ts）
+  const translation = { t: (key: string) => key, i18n: { language: getLang() } };
   const uiBuilder = new UIBuilder(container, {
     bitable,
     callback: runUIBuilder,
@@ -56,8 +75,8 @@ async function bootstrap(): Promise<void> {
     tableUnsubs = [];
     try {
       const table = await bitable.base.getTableById(tableId);
-      const onStructure = () => reloadForm('字段结构已更新');
-      const onData = () => updateSyncStatus('数据已同步');
+      const onStructure = () => reloadForm(t('sync.fieldStructure'));
+      const onData = () => syncStatus('sync.dataSynced');
       tableUnsubs = [
         table.onFieldAdd(onStructure),
         table.onFieldDelete(onStructure),
@@ -67,18 +86,18 @@ async function bootstrap(): Promise<void> {
         table.onRecordModify(onData),
       ];
     } catch {
-      updateSyncStatus('事件绑定失败，导出时仍读取实时数据');
+      syncStatus('sync.bindFailed');
     }
   };
 
   /* ---------- base 级事件（表增删、选中变化） ---------- */
-  bitable.base.onTableAdd(() => reloadForm('数据表已新增'));
-  bitable.base.onTableDelete(() => reloadForm('数据表已删除'));
+  bitable.base.onTableAdd(() => reloadForm(t('sync.tableAdded')));
+  bitable.base.onTableDelete(() => reloadForm(t('sync.tableDeleted')));
   bitable.base.onSelectionChange((ev: IEventCbCtx<Selection>) => {
     const tableId = ev.data?.tableId;
     if (tableId && tableId !== boundTableId) {
       void bindTableEvents(tableId);
-      reloadForm('已切换数据表');
+      reloadForm(t('sync.tableSwitched'));
     }
   });
 
@@ -88,7 +107,7 @@ async function bootstrap(): Promise<void> {
     selection?.tableId ?? (await bitable.base.getTableMetaList().catch(() => []))[0]?.id;
   if (activeTableId) void bindTableEvents(activeTableId);
 
-  updateSyncStatus('就绪');
+  syncStatus('sync.ready');
 }
 
 void bootstrap();

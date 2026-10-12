@@ -1,11 +1,14 @@
 /**
- * UIBuilder 表单：数据表选择（默认当前激活表）+ 字段勾选（默认全选）+ 导出按钮。
+ * UIBuilder 表单：数据表选择（默认当前激活表）+ 字段勾选（默认全选 · 按表格列顺序）+ 导出按钮。
+ * 导出后挂载结果面板（多策略保存 + 复制兜底）。
  */
 import type { IFieldMeta, UIBuilder } from '@lark-base-open/js-sdk';
 import { buildCsvWithBom, makeCsvFileName } from './core/csv';
 import { formatCellValue } from './core/format';
 import { extractId, extractIdList } from './core/values';
-import { downloadCsv, renderFallbackLink } from './download';
+import { attemptAutoDownload, createDownload } from './download';
+import { t } from './i18n';
+import { mountResultPanel } from './resultPanel';
 import {
   cellOf,
   fetchAllRecords,
@@ -42,10 +45,10 @@ export function pickFields(metas: IFieldMeta[], selected: unknown): IFieldMeta[]
 async function handleExport(uiBuilder: UIBuilder, values: Record<string, unknown>): Promise<void> {
   const tableId = await resolveTableId(values);
   if (!tableId) {
-    uiBuilder.message.warning('当前多维表格里没有可导出的数据表');
+    uiBuilder.message.warning(t('msg.noTable'));
     return;
   }
-  uiBuilder.showLoading('正在导出，请稍候…');
+  uiBuilder.showLoading(t('msg.exporting'));
   try {
     const table = await getTableById(tableId);
     const [tableName, metas, records] = await Promise.all([
@@ -54,18 +57,27 @@ async function handleExport(uiBuilder: UIBuilder, values: Record<string, unknown
       fetchAllRecords(table),
     ]);
     const chosen = pickFields(metas, values.fields);
-    if (chosen.length === 0) throw new Error('所选字段为空');
+    if (chosen.length === 0) throw new Error('no fields');
     const headers = chosen.map((m) => m.name);
     const rows = records.map((record) =>
       chosen.map((m) => formatCellValue(m, cellOf(record, m.id))),
     );
-    const handle = downloadCsv(makeCsvFileName(tableName), buildCsvWithBom(headers, rows));
-    renderFallbackLink(handle);
-    uiBuilder.message.success(
-      `已导出 ${records.length} 条记录、${chosen.length} 个字段（${handle.fileName}）· 若没开始下载请点下方蓝色按钮`,
-    );
+    const handle = createDownload(makeCsvFileName(tableName), buildCsvWithBom(headers, rows));
+    attemptAutoDownload(handle);
+    mountResultPanel(handle, { records: records.length, fields: chosen.length });
+    if (records.length === 0) {
+      uiBuilder.message.warning(t('msg.emptyTable'));
+    } else {
+      uiBuilder.message.success(
+        t('msg.exported', {
+          records: records.length,
+          fields: chosen.length,
+          name: handle.fileName,
+        }),
+      );
+    }
   } catch (e) {
-    uiBuilder.message.error(`导出失败：${e instanceof Error ? e.message : String(e)}`);
+    uiBuilder.message.error(t('msg.exportFailed', { error: e instanceof Error ? e.message : String(e) }));
   } finally {
     uiBuilder.hideLoading();
   }
@@ -81,30 +93,23 @@ export default async function runUIBuilder(uiBuilder: UIBuilder): Promise<void> 
     : [];
   const allFieldIds = defaultFields.map((f) => f.id);
 
-  uiBuilder.markdown(
-    '**CSV 导出** — 选择数据表与字段（默认全选），点击「导出 CSV」。\n\n' +
-      '- 超链接导出为：`显示文字 空格 原始链接`\n' +
-      '- UTF-8 带 BOM，Excel 打开中文不乱码\n' +
-      '- 全部在浏览器本地生成，不外发数据',
-  );
-
   uiBuilder.form(
     (form) => ({
       formItems: [
         form.tableSelect('table', {
-          label: '选择数据表',
-          placeholder: '请选择数据表',
+          label: t('form.table.label'),
+          placeholder: t('form.table.placeholder'),
           ...(defaultTableId ? { defaultValue: defaultTableId } : {}),
         }),
         form.fieldSelect('fields', {
-          label: '选择字段（默认全选）',
+          label: t('form.fields.label'),
           sourceTable: 'table',
           multiple: true,
-          placeholder: '留空导出全部字段',
+          placeholder: t('form.fields.placeholder'),
           ...(allFieldIds.length > 0 ? { defaultValue: allFieldIds } : {}),
         }),
       ],
-      buttons: [{ key: 'export', label: '导出 CSV' }],
+      buttons: [{ key: 'export', label: t('form.export') }],
     }),
     async ({ key, values }) => {
       if (key === 'export') await handleExport(uiBuilder, values);

@@ -33,3 +33,12 @@ export function makeCsvFileName(tableName: string, date: Date = new Date()): str
     `-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`;
   return `${safe}_${ts}.csv`;
 }
+
+/** 字节数 → 可读大小（B / KB / MB），用于结果面板展示 */
+export function formatBytes(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '0 B';
+  if (n < 1024) return `${Math.round(n)} B`;
+  const kb = n / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  return `${(kb / 1024).toFixed(2)} MB`;
+}

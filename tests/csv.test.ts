@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCsv, buildCsvWithBom, escapeCsvCell, makeCsvFileName } from '../src/core/csv';
+import { buildCsv, buildCsvWithBom, escapeCsvCell, formatBytes, makeCsvFileName } from '../src/core/csv';
 
 describe('CSV 转义', () => {
   it('普通文本不加引号', () => {
@@ -41,5 +41,23 @@ describe('下载文件名', () => {
   it('空表名回退为 table', () => {
     const d = new Date(2026, 0, 1, 0, 0, 0);
     expect(makeCsvFileName('', d)).toBe('table_20260101-000000.csv');
+  });
+});
+
+describe('formatBytes', () => {
+  it('字节', () => {
+    expect(formatBytes(0)).toBe('0 B');
+    expect(formatBytes(512)).toBe('512 B');
+  });
+  it('KB', () => {
+    expect(formatBytes(1024)).toBe('1.0 KB');
+    expect(formatBytes(1536)).toBe('1.5 KB');
+  });
+  it('MB', () => {
+    expect(formatBytes(1024 * 1024)).toBe('1.00 MB');
+  });
+  it('非法输入回退 0 B', () => {
+    expect(formatBytes(-1)).toBe('0 B');
+    expect(formatBytes(Number.NaN)).toBe('0 B');
   });
 });
